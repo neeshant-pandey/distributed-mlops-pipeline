@@ -43,11 +43,110 @@ Set up the foundational project structure, dependencies, and configuration files
        └── test_serving/
    ```
 
-2. **Create Dependencies File**
+2. **Create Dependencies File Using `uv`** ⭐ **RECOMMENDED**
 
-   Choose ONE of the following:
+   `uv` is the modern, blazingly fast Python package manager from Astral (creators of Ruff). It's what cutting-edge teams like Dagster use.
 
-   **Option A: Using `requirements.txt`** (simpler)
+   **Step 1: Install uv**
+   ```bash
+   # On macOS/Linux
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+
+   # On Windows
+   powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+   # Or with pip (if you already have Python)
+   pip install uv
+
+   # Verify installation
+   uv --version
+   ```
+
+   **Step 2: Initialize project**
+   ```bash
+   # Create virtual environment
+   uv venv
+
+   # Activate it
+   # On Linux/macOS:
+   source .venv/bin/activate
+   # On Windows:
+   .venv\Scripts\activate
+   ```
+
+   **Step 3: Create `pyproject.toml`**
+   ```toml
+   [project]
+   name = "distributed-mlops-pipeline"
+   version = "0.1.0"
+   description = "MLOps pipeline for Limit Order Book mid-price prediction"
+   requires-python = ">=3.10"
+   dependencies = [
+       "torch>=2.0.0",
+       "numpy>=1.24.0",
+       "pandas>=2.0.0",
+       "scikit-learn>=1.3.0",
+       "mlflow>=2.8.0",
+       "fastapi>=0.104.0",
+       "uvicorn[standard]>=0.24.0",
+       "pydantic>=2.0.0",
+       "prometheus-client>=0.19.0",
+       "matplotlib>=3.7.0",
+       "seaborn>=0.12.0",
+       "pyyaml>=6.0",
+       "python-dotenv>=1.0.0",
+   ]
+
+   [project.optional-dependencies]
+   dev = [
+       "pytest>=7.4.0",
+       "ruff>=0.1.0",
+       "mypy>=1.7.0",
+       "jupyter>=1.0.0",
+       "ipykernel>=6.25.0",
+   ]
+
+   [build-system]
+   requires = ["hatchling"]
+   build-backend = "hatchling.build"
+
+   [tool.ruff]
+   line-length = 100
+   target-version = "py310"
+
+   [tool.ruff.lint]
+   select = ["E", "F", "I", "N", "W", "UP"]
+   ignore = []
+
+   [tool.mypy]
+   python_version = "3.10"
+   warn_return_any = true
+   warn_unused_configs = true
+   disallow_untyped_defs = false
+   ```
+
+   **Step 4: Install dependencies**
+   ```bash
+   # Install all dependencies (creates uv.lock file automatically)
+   uv pip install -e ".[dev]"
+
+   # Or install individually
+   uv pip install torch numpy pandas scikit-learn mlflow fastapi uvicorn pydantic prometheus-client matplotlib seaborn pyyaml python-dotenv
+   uv pip install pytest ruff mypy jupyter ipykernel
+   ```
+
+   **Why uv?**
+   - ⚡ 10-100x faster than pip
+   - 🔒 Automatic lock file (`uv.lock`) for reproducibility
+   - 🎯 Drop-in replacement for pip commands
+   - 🏢 Used by Dagster, FastAPI, and modern Python projects
+   - 🚀 Shows cutting-edge knowledge on your portfolio
+
+   ---
+
+   **Alternative (if you prefer traditional approach):**
+
+   **Using `requirements.txt`**
    ```
    # Core ML
    torch>=2.0.0
@@ -82,13 +181,7 @@ Set up the foundational project structure, dependencies, and configuration files
    ipykernel>=6.25.0
    ```
 
-   **Option B: Using Poetry** (more professional)
-   ```bash
-   poetry init
-   # Follow prompts, then:
-   poetry add torch numpy pandas scikit-learn mlflow fastapi uvicorn pydantic prometheus-client matplotlib seaborn pyyaml python-dotenv
-   poetry add --group dev pytest ruff mypy jupyter ipykernel
-   ```
+   Then: `pip install -r requirements.txt`
 
 3. **Create `.gitignore`**
    ```
@@ -102,6 +195,9 @@ Set up the foundational project structure, dependencies, and configuration files
    venv/
    ENV/
    .venv
+
+   # uv
+   uv.lock
 
    # Data
    data/raw/*
@@ -248,11 +344,13 @@ Set up the foundational project structure, dependencies, and configuration files
 
    2. Install dependencies:
    ```bash
-   # Using pip
-   pip install -r requirements.txt
+   # Using uv (recommended)
+   uv venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   uv pip install -e ".[dev]"
 
-   # OR using Poetry
-   poetry install
+   # OR using pip
+   pip install -r requirements.txt
    ```
 
    3. Download data (Task 2)
@@ -293,21 +391,32 @@ Set up the foundational project structure, dependencies, and configuration files
 
 8. **Test your setup**
    ```bash
-   # Verify Python packages install
+   # If using uv (recommended):
+   uv venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   uv pip install -e ".[dev]"
+
+   # OR if using pip:
    pip install -r requirements.txt
 
    # Verify you can import torch
    python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
+
+   # Verify uv and other tools work
+   uv --version
+   ruff --version
+   pytest --version
    ```
 
 #### Deliverables Checklist
 
 - [ ] All directories created
-- [ ] `requirements.txt` or `pyproject.toml` created
-- [ ] `.gitignore` configured
+- [ ] `pyproject.toml` created (recommended: uv) OR `requirements.txt`
+- [ ] `.gitignore` configured (including uv.lock if using uv)
 - [ ] Configuration files created (`model_config.yaml`, `training_config.yaml`)
 - [ ] README.md created
 - [ ] All `__init__.py` files created
+- [ ] Virtual environment created (`.venv/`)
 - [ ] Dependencies install successfully
 - [ ] Can import PyTorch
 
@@ -315,11 +424,11 @@ Set up the foundational project structure, dependencies, and configuration files
 
 I will check:
 1. ✅ Project structure matches the specification
-2. ✅ All dependencies are specified with versions
-3. ✅ `.gitignore` is comprehensive
+2. ✅ All dependencies are specified with versions in `pyproject.toml` (or `requirements.txt`)
+3. ✅ `.gitignore` is comprehensive (includes `.venv`, `uv.lock`)
 4. ✅ Configuration files are valid YAML
 5. ✅ README is clear and informative
-6. ✅ Can run `pip install -r requirements.txt` without errors
+6. ✅ Dependencies install successfully with `uv pip install -e ".[dev]"` (or pip)
 
 #### Tips
 
@@ -330,9 +439,10 @@ I will check:
 
 #### Resources
 
+- [uv Documentation](https://docs.astral.sh/uv/) ⭐ **Recommended**
 - [Python Project Structure Best Practices](https://docs.python-guide.org/writing/structure/)
 - [PyTorch Installation](https://pytorch.org/get-started/locally/)
-- [Poetry Documentation](https://python-poetry.org/docs/)
+- [pyproject.toml Guide](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/)
 
 ---
 
@@ -349,7 +459,7 @@ When you're done:
 
 2. **Share**:
    - Screenshot of your project structure
-   - Output of `pip list` showing installed packages
+   - Output of `uv pip list` or `pip list` showing installed packages
    - Any issues you encountered
 
 3. **Ready for review**: Let me know you're done!
