@@ -466,12 +466,239 @@ When you're done:
 
 ---
 
-### Task 2: Data Download & Exploration 🔲
-**Status**: Not Started
+### Task 2: Data Download & Exploration 🔄
+**Status**: Ready to Start
 **Estimated Time**: 3-4 hours
-**Dependencies**: Task 1
+**Dependencies**: Task 1 ✅
 
-(Details will be provided after Task 1 is completed)
+#### Objectives
+Download the FI-2010 dataset and perform exploratory data analysis to understand the data structure, distributions, and potential challenges.
+
+#### What You Need to Do
+
+1. **Download FI-2010 Dataset**
+
+   The download script has been created for you at `src/data/download.py`.
+
+   Run the download script:
+   ```bash
+   python src/data/download.py
+   ```
+
+   This will download 6 files to `data/raw/`:
+   - **Train files**: `Train_Dst_NoAuction_DecPre_CF_7.txt`, `Train_Dst_NoAuction_DecPre_CF_8.txt`, `Train_Dst_NoAuction_DecPre_CF_9.txt`
+   - **Test files**: `Test_Dst_NoAuction_DecPre_CF_7.txt`, `Test_Dst_NoAuction_DecPre_CF_8.txt`, `Test_Dst_NoAuction_DecPre_CF_9.txt`
+
+   Verify the download:
+   ```bash
+   python src/data/download.py --verify
+   ```
+
+2. **Create Data Exploration Notebook**
+
+   Create `notebooks/01_data_exploration.ipynb` and include the following analysis:
+
+   **a) Load and Inspect Data**
+   ```python
+   from src.data.download import FI2010Downloader
+
+   downloader = FI2010Downloader()
+   X_train, y_train = downloader.load_data(split='train')
+   X_test, y_test = downloader.load_data(split='test')
+
+   print(f"Train features shape: {X_train.shape}")
+   print(f"Train labels shape: {y_train.shape}")
+   print(f"Test features shape: {X_test.shape}")
+   print(f"Test labels shape: {y_test.shape}")
+   ```
+
+   **b) Understand Data Structure**
+   - The data contains 144 features:
+     - 40 price levels (20 ask prices + 20 bid prices)
+     - 40 volume levels (20 ask volumes + 20 bid volumes)
+     - 64 derived features
+   - Labels have 5 columns for prediction horizons k=[1, 2, 3, 5, 10]
+   - Label values: -1 (down), 0 (stationary), 1 (up)
+
+   **c) Feature Distributions**
+   ```python
+   import matplotlib.pyplot as plt
+   import seaborn as sns
+
+   # Sample a few features and plot distributions
+   fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+   for i, ax in enumerate(axes.flat):
+       ax.hist(X_train[:, i*20], bins=50, alpha=0.7)
+       ax.set_title(f'Feature {i*20}')
+       ax.set_xlabel('Value')
+       ax.set_ylabel('Frequency')
+   plt.tight_layout()
+   plt.show()
+
+   # Check for outliers
+   print("\nFeature statistics:")
+   print(f"Min: {X_train.min()}")
+   print(f"Max: {X_train.max()}")
+   print(f"Mean: {X_train.mean():.4f}")
+   print(f"Std: {X_train.std():.4f}")
+   ```
+
+   **d) Label Distribution Analysis**
+   ```python
+   import pandas as pd
+
+   # Analyze label distribution for each horizon
+   horizons = ['k=1', 'k=2', 'k=3', 'k=5', 'k=10']
+
+   for i, horizon in enumerate(horizons):
+       print(f"\n{horizon} Label Distribution:")
+       unique, counts = np.unique(y_train[:, i], return_counts=True)
+       for label, count in zip(unique, counts):
+           percentage = count / len(y_train) * 100
+           label_name = {-1: 'Down', 0: 'Stationary', 1: 'Up'}[label]
+           print(f"  {label_name:12} ({label:2d}): {count:7d} ({percentage:5.2f}%)")
+
+   # Visualize class distribution
+   fig, axes = plt.subplots(1, 5, figsize=(20, 4))
+   for i, (ax, horizon) in enumerate(zip(axes, horizons)):
+       unique, counts = np.unique(y_train[:, i], return_counts=True)
+       ax.bar(['Down', 'Stationary', 'Up'], counts)
+       ax.set_title(f'{horizon}')
+       ax.set_ylabel('Count')
+   plt.suptitle('Label Distribution Across Prediction Horizons')
+   plt.tight_layout()
+   plt.show()
+   ```
+
+   **e) Sample Visualizations**
+
+   **Order Book Heatmap:**
+   ```python
+   # Visualize a single LOB snapshot
+   # Reshape first 100 features (10 levels * 10 features) into 2D
+   sample_idx = 1000
+   lob_snapshot = X_train[sample_idx, :100].reshape(10, 10)
+
+   plt.figure(figsize=(10, 6))
+   sns.heatmap(lob_snapshot, cmap='RdYlGn', center=0)
+   plt.title('Limit Order Book Snapshot')
+   plt.xlabel('Feature Index')
+   plt.ylabel('Depth Level')
+   plt.show()
+   ```
+
+   **Time Series Visualization:**
+   ```python
+   # Plot evolution of first few features over time
+   window = 1000
+   fig, axes = plt.subplots(3, 1, figsize=(15, 8))
+
+   for i, ax in enumerate(axes):
+       ax.plot(X_train[:window, i*10])
+       ax.set_title(f'Feature {i*10} Time Series')
+       ax.set_xlabel('Time Step')
+       ax.set_ylabel('Value')
+   plt.tight_layout()
+   plt.show()
+   ```
+
+   **Correlation Analysis:**
+   ```python
+   # Sample features for correlation (all 144 would be too dense)
+   sample_features = X_train[:5000, ::20]  # Every 20th feature
+   corr_matrix = np.corrcoef(sample_features.T)
+
+   plt.figure(figsize=(10, 8))
+   sns.heatmap(corr_matrix, cmap='coolwarm', center=0,
+               square=True, linewidths=0.5)
+   plt.title('Feature Correlation Matrix (Sampled)')
+   plt.tight_layout()
+   plt.show()
+   ```
+
+3. **Document Your Findings**
+
+   In markdown cells in your notebook, document:
+
+   - **Data Quality Issues**: Any missing values, outliers, or anomalies?
+   - **Class Imbalance**: Is there significant imbalance between Up/Down/Stationary?
+   - **Feature Insights**: What patterns do you observe in the features?
+   - **Challenges Identified**: What preprocessing challenges do you anticipate?
+   - **Key Observations**: Any interesting patterns or surprising findings?
+
+4. **Questions to Answer in Your Notebook**
+
+   - What is the total number of training and test samples?
+   - Are the features already normalized? (Check mean and std)
+   - Which prediction horizon (k) has the most balanced classes?
+   - Are there any temporal patterns in the data?
+   - What is the data type and range of features?
+
+#### Deliverables Checklist
+
+- [ ] FI-2010 data downloaded to `data/raw/` (6 files)
+- [ ] `notebooks/01_data_exploration.ipynb` created and runs without errors
+- [ ] Data shape and structure documented
+- [ ] Feature distributions visualized (histograms, time series)
+- [ ] Label distribution analyzed for all 5 horizons
+- [ ] Class imbalance identified and quantified
+- [ ] Sample visualizations included:
+  - [ ] Order book heatmap
+  - [ ] Time series plots
+  - [ ] Correlation matrix
+- [ ] Key findings documented in markdown cells
+- [ ] Data quality issues identified
+- [ ] Preprocessing challenges noted
+
+#### Evaluation Criteria
+
+I will check:
+1. ✅ All 6 data files successfully downloaded
+2. ✅ Notebook runs end-to-end without errors
+3. ✅ Clear understanding of data structure (144 features, 5 label horizons)
+4. ✅ Thorough feature distribution analysis
+5. ✅ Class imbalance quantified for each horizon
+6. ✅ Quality visualizations that provide insights
+7. ✅ Identified potential preprocessing needs (normalization, handling imbalance, etc.)
+8. ✅ Documentation is clear and well-organized
+
+#### Tips
+
+- **Start simple**: Load a small subset of data first to test your code
+- **Visualize iteratively**: Don't try to create all plots at once
+- **Document as you go**: Write markdown cells explaining what you observe
+- **Use the download script**: It has helper methods for loading data
+- **Check data types**: Ensure features are float and labels are int
+- **Sample the data**: For heavy visualizations, use a subset (e.g., first 5000 samples)
+
+#### Resources
+
+- **FI-2010 Dataset**: [Original Paper](https://arxiv.org/abs/1705.03233)
+- **DeepLOB Paper**: [arXiv:1808.03668](https://arxiv.org/abs/1808.03668)
+- **DeepLOB GitHub**: [Reference Implementation](https://github.com/zcakhaa/DeepLOB-Deep-Convolutional-Neural-Networks-for-Limit-Order-Books)
+- **LOB Explanation**: [What is a Limit Order Book?](https://www.investopedia.com/terms/o/order-book.asp)
+
+---
+
+## Submission
+
+When you're done:
+
+1. **Commit your changes**
+   ```bash
+   git add data/raw/ notebooks/01_data_exploration.ipynb
+   git commit -m "Task 2: Data download and exploration"
+   git push
+   ```
+
+2. **Share**:
+   - Your completed notebook
+   - Key findings summary (3-5 bullet points)
+   - Any challenges you faced
+
+3. **Ready for review**: Let me know you're done!
+
+---
 
 ---
 
