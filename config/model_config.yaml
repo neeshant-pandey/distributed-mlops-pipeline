@@ -1,0 +1,27 @@
+model:
+  name: "deeplob"
+
+  input_shape:
+    channels:1
+    height:100
+    width:100
+
+  conv_layers:
+    - filters: 32
+      kernal_size: [1,2]
+      stride: [1,2]
+    - filters: 32
+      kernal_size: [4,1]
+      stride: [1,1]
+    - filters: 32
+      kernal_size: [4,1]
+      stride: [1,1]
+  
+  inception:
+    filters: 32
+
+  lstm:
+    hidden_size: 64
+    num_layers: 1
+
+  num_classes: 3

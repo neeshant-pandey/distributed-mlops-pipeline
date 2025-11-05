@@ -1,0 +1,49 @@
+# Python
+   __pycache__/
+   *.py[cod]
+   *$py.class
+   *.so
+   .Python
+   env/
+   venv/
+   ENV/
+   .venv
+
+   # uv
+   uv.lock
+
+   # Data
+   data/raw/*
+   data/processed/*
+   !data/raw/.gitkeep
+   !data/processed/.gitkeep
+
+   # Models
+   models/
+   mlruns/
+   checkpoints/
+
+   # Jupyter
+   .ipynb_checkpoints
+
+   # IDE
+   .vscode/
+   .idea/
+   *.swp
+   *.swo
+
+   # OS
+   .DS_Store
+   Thumbs.db
+
+   # Secrets
+   .env
+   *.pem
+   *.key
+
+   # Docker
+   .dockerignore
+
+   # Logs
+   logs/
+   *.log

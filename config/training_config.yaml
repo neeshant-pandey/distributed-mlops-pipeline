@@ -1,0 +1,33 @@
+ training:
+     # Data
+     batch_size: 32
+     num_workers: 4
+
+     # Optimization
+     learning_rate: 0.001
+     weight_decay: 0.0001
+     epochs: 50
+
+     # Scheduler
+     scheduler:
+       type: "StepLR"
+       step_size: 10
+       gamma: 0.5
+
+     # Early stopping
+     early_stopping:
+       patience: 10
+       min_delta: 0.001
+
+     # Checkpointing
+     checkpoint_dir: "checkpoints"
+     save_every_n_epochs: 5
+
+     # Device
+     device: "cuda"  # or "cpu"
+     seed: 42
+
+   # MLflow
+     mlflow:
+      tracking_uri: "http://localhost:5000"
+      experiment_name: "lob-midprice-prediction"
