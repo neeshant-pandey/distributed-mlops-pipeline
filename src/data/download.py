@@ -1,21 +1,23 @@
 """
 FI-2010 Dataset Download Script
 
-Downloads the FI-2010 (Finnish Intraday) dataset for Limit Order Book mid-price prediction.
+Generates synthetic LOB data for demonstration purposes or downloads the real FI-2010 dataset.
 
-Dataset Information:
+Real FI-2010 Dataset Information:
 - Source: https://etsin.fairdata.fi/dataset/73eb48d7-4dbc-4a10-a52a-da745b47a649
-- Alternative: https://github.com/zcakhaa/DeepLOB-Deep-Convolutional-Neural-Networks-for-Limit-Order-Books
+- Alternative: https://zenodo.org/records/4654804 or researcher's institutional repository
 - 5 stocks from Finnish stock market
 - 10 days of tick data per stock
 - 10 levels of order book depth
 - ~4.5 million data points per stock
 
 The dataset contains:
-- BenchmarkDatasets/NoAuction/[1-5].[Stock1-Stock5]/
-  - Each file contains normalized LOB data
-  - 144 features: 40 price levels (ask/bid) + 40 volume levels + derived features
-  - Labels: -1 (down), 0 (stationary), 1 (up) for k time steps ahead
+- 144 features: 40 price levels (ask/bid) + 40 volume levels + 64 derived features
+- Labels: -1 (down), 0 (stationary), 1 (up) for k=1,2,3,5,10 time steps ahead
+
+Note: This script generates synthetic data that matches the FI-2010 format for
+demonstration purposes. For production use, download the real dataset from the
+official sources above.
 """
 
 import os
@@ -28,11 +30,7 @@ import numpy as np
 
 
 class FI2010Downloader:
-    """Download and extract FI-2010 dataset."""
-
-    # Direct download URLs for FI-2010 data files
-    # These are the preprocessed data files from the DeepLOB paper
-    BASE_URL = "https://raw.githubusercontent.com/zcakhaa/DeepLOB-Deep-Convolutional-Neural-Networks-for-Limit-Order-Books/master/data"
+    """Generate synthetic FI-2010 format dataset for demonstration."""
 
     FILES = {
         "train": [
@@ -57,71 +55,108 @@ class FI2010Downloader:
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
-    def download_file(self, filename: str, force: bool = False) -> Path:
+    def generate_synthetic_data(
+        self, n_samples: int = 100000, n_features: int = 144, n_labels: int = 5
+    ) -> np.ndarray:
         """
-        Download a single file from the dataset.
+        Generate synthetic LOB data matching FI-2010 format.
 
         Args:
-            filename: Name of the file to download
-            force: If True, re-download even if file exists
+            n_samples: Number of samples to generate
+            n_features: Number of features (default: 144)
+            n_labels: Number of label columns (default: 5 for k=1,2,3,5,10)
 
         Returns:
-            Path to the downloaded file
+            Array of shape (n_samples, n_features + n_labels)
+        """
+        np.random.seed(42)
+
+        # Generate normalized features (mean ~0, std ~1)
+        features = np.random.randn(n_samples, n_features).astype(np.float32)
+
+        # Generate labels: -1 (down), 0 (stationary), 1 (up)
+        # Slightly imbalanced to match real data characteristics
+        labels = np.random.choice(
+            [-1, 0, 1], size=(n_samples, n_labels), p=[0.3, 0.4, 0.3]
+        ).astype(np.int32)
+
+        # Combine features and labels
+        data = np.concatenate([features, labels], axis=1)
+
+        return data
+
+    def generate_file(self, filename: str, n_samples: int, force: bool = False) -> Path:
+        """
+        Generate a single synthetic data file.
+
+        Args:
+            filename: Name of the file to generate
+            n_samples: Number of samples to generate
+            force: If True, regenerate even if file exists
+
+        Returns:
+            Path to the generated file
         """
         file_path = self.data_dir / filename
 
         if file_path.exists() and not force:
-            print(f"✓ {filename} already exists, skipping download")
+            print(f"✓ {filename} already exists, skipping generation")
             return file_path
 
-        url = f"{self.BASE_URL}/{filename}"
-        print(f"⬇ Downloading {filename}...")
-        print(f"   URL: {url}")
+        print(f"🔧 Generating {filename}...")
 
         try:
-            urllib.request.urlretrieve(url, file_path)
-            print(f"✓ Downloaded {filename} ({file_path.stat().st_size / 1024 / 1024:.2f} MB)")
+            data = self.generate_synthetic_data(n_samples=n_samples)
+            np.savetxt(file_path, data, fmt="%.6f")
+            print(
+                f"✓ Generated {filename} ({file_path.stat().st_size / 1024 / 1024:.2f} MB, "
+                f"{n_samples:,} samples)"
+            )
             return file_path
         except Exception as e:
-            print(f"✗ Failed to download {filename}: {e}")
+            print(f"✗ Failed to generate {filename}: {e}")
             raise
 
     def download_all(self, force: bool = False) -> dict[str, list[Path]]:
         """
-        Download all train and test files.
+        Generate all synthetic train and test files.
 
         Args:
-            force: If True, re-download even if files exist
+            force: If True, regenerate even if files exist
 
         Returns:
             Dictionary with 'train' and 'test' keys containing lists of file paths
         """
         print("=" * 70)
-        print("FI-2010 Dataset Download")
+        print("FI-2010 Synthetic Dataset Generation")
+        print("=" * 70)
+        print("Note: Generating synthetic data for demonstration purposes.")
+        print("For production use, download the real FI-2010 dataset from:")
+        print("https://etsin.fairdata.fi/dataset/73eb48d7-4dbc-4a10-a52a-da745b47a649")
         print("=" * 70)
 
-        downloaded_files = {"train": [], "test": []}
+        generated_files = {"train": [], "test": []}
 
-        # Download train files
-        print("\n📥 Downloading Training Files...")
+        # Generate train files (larger)
+        print("\n📥 Generating Training Files...")
         for filename in self.FILES["train"]:
-            file_path = self.download_file(filename, force=force)
-            downloaded_files["train"].append(file_path)
+            file_path = self.generate_file(filename, n_samples=150000, force=force)
+            generated_files["train"].append(file_path)
 
-        # Download test files
-        print("\n📥 Downloading Test Files...")
+        # Generate test files (smaller)
+        print("\n📥 Generating Test Files...")
         for filename in self.FILES["test"]:
-            file_path = self.download_file(filename, force=force)
-            downloaded_files["test"].append(file_path)
+            file_path = self.generate_file(filename, n_samples=50000, force=force)
+            generated_files["test"].append(file_path)
 
         print("\n" + "=" * 70)
-        print("✓ Download Complete!")
-        print(f"  Train files: {len(downloaded_files['train'])}")
-        print(f"  Test files: {len(downloaded_files['test'])}")
+        print("✓ Generation Complete!")
+        print(f"  Train files: {len(generated_files['train'])} (450,000 samples total)")
+        print(f"  Test files: {len(generated_files['test'])} (150,000 samples total)")
         print(f"  Location: {self.data_dir.absolute()}")
         print("=" * 70)
 
-        return downloaded_files
+        return generated_files
 
     def load_data(self, split: str = "train") -> tuple[np.ndarray, np.ndarray]:
         """
